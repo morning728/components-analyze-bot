@@ -1,485 +1,341 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-PySpark скрипт для анализа данных компонентов с использованием MapReduce
-Выводит ключевые метрики из датасета all_components_prices.csv
-Автоматически загружает данные в HDFS, если их там нет
+Full Spark report for the car market dataset.
+Loads the CSV into HDFS if it is missing there.
 """
 
-import subprocess
-import os
-import time
-import sys
 import io
-
-# Настройка кодировки для вывода
 import locale
+import os
+import sys
+import time
+
 try:
-    locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-except:
+    locale.setlocale(locale.LC_ALL, "en_US.UTF-8")
+except Exception:
     try:
-        locale.setlocale(locale.LC_ALL, 'C.UTF-8')
-    except:
+        locale.setlocale(locale.LC_ALL, "C.UTF-8")
+    except Exception:
         pass
 
-# Установка переменной окружения для кодировки
-os.environ['PYTHONIOENCODING'] = 'utf-8'
+os.environ["PYTHONIOENCODING"] = "utf-8"
 
-# Настройка stdout/stderr для UTF-8
 try:
-    if hasattr(sys.stdout, 'buffer'):
-        if sys.stdout.encoding != 'utf-8':
-            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    if hasattr(sys.stderr, 'buffer'):
-        if sys.stderr.encoding != 'utf-8':
-            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
-except:
+    if hasattr(sys.stdout, "buffer") and sys.stdout.encoding != "utf-8":
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "buffer") and sys.stderr.encoding != "utf-8":
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+except Exception:
     pass
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import (
-    col, avg, min as spark_min, max as spark_max, 
-    count, sum as spark_sum, stddev, round as spark_roundhasoop-proj
-)
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
+from pyspark.sql.functions import avg, col, count, max as spark_max, min as spark_min, round as spark_round, stddev
+from pyspark.sql.types import DoubleType, IntegerType, StringType, StructField, StructType
 
-def create_spark_session():
-    """Создание Spark сессии"""
-    spark = SparkSession.builder \
-        .appName("ComponentsPriceAnalysis") \
-        .master("spark://spark-master:7077") \
-        .config("spark.hadoop.fs.defaultFS", "hdfs://namenode:9000") \
+
+HDFS_PATH = "hdfs://namenode:9000/data/all_cars_prices.csv"
+LOCAL_FILE = "all_cars_prices.csv"
+
+
+def create_spark_session(app_name="CarMarketAnalysis", master="spark://spark-master:7077"):
+    return (
+        SparkSession.builder.appName(app_name)
+        .master(master)
+        .config("spark.hadoop.fs.defaultFS", "hdfs://namenode:9000")
         .getOrCreate()
-    return spark
+    )
+
+
+def get_schema():
+    return StructType(
+        [
+            StructField("Vehicle_Type", StringType(), True),
+            StructField("Brand", StringType(), True),
+            StructField("Model", StringType(), True),
+            StructField("Fuel_Type", StringType(), True),
+            StructField("Transmission", StringType(), True),
+            StructField("Drive_Type", StringType(), True),
+            StructField("Year", IntegerType(), True),
+            StructField("Month", IntegerType(), True),
+            StructField("Day", IntegerType(), True),
+            StructField("Week", IntegerType(), True),
+            StructField("Dealer", StringType(), True),
+            StructField("Region_Code", StringType(), True),
+            StructField("Currency", StringType(), True),
+            StructField("Price_USD", DoubleType(), True),
+            StructField("Mileage_KM", IntegerType(), True),
+        ]
+    )
+
 
 def check_hdfs_file_exists(hdfs_path):
-    """Проверка существования файла в HDFS через Spark"""
+    helper = create_spark_session(app_name="CheckHDFSFile", master="local[1]")
     try:
-        # Используем Spark для проверки существования файла
-        spark = SparkSession.builder \
-            .appName("CheckHDFSFile") \
-            .master("local[1]") \
-            .config("spark.hadoop.fs.defaultFS", "hdfs://namenode:9000") \
-            .getOrCreate()
-        
-        sc = spark.sparkContext
-        hadoop_conf = sc._jsc.hadoopConfiguration()
-        hadoop_conf.set("fs.defaultFS", "hdfs://namenode:9000")
-        
+        sc = helper.sparkContext
+        conf = sc._jsc.hadoopConfiguration()
+        conf.set("fs.defaultFS", "hdfs://namenode:9000")
         uri = sc._jvm.java.net.URI(hdfs_path)
-        fs = sc._jvm.org.apache.hadoop.fs.FileSystem.get(uri, hadoop_conf)
-        path = sc._jvm.org.apache.hadoop.fs.Path(hdfs_path)
-        exists = fs.exists(path)
-        
-        spark.stop()
-        return exists
-    except Exception as e:
-        print("Предупреждение при проверке файла в HDFS: {}".format(e))
-        return False
+        fs = sc._jvm.org.apache.hadoop.fs.FileSystem.get(uri, conf)
+        return fs.exists(sc._jvm.org.apache.hadoop.fs.Path(hdfs_path))
+    finally:
+        helper.stop()
+
 
 def upload_to_hdfs(local_path, hdfs_path):
-    """Загрузка файла в HDFS через PySpark"""
-    # В контейнере Spark команда hdfs может быть недоступна,
-    # поэтому используем PySpark для загрузки
-    return upload_to_hdfs_via_spark(local_path, hdfs_path)
-
-def upload_to_hdfs_via_spark(local_path, hdfs_path):
-    """Загрузка файла в HDFS через PySpark"""
-    try:
-        if not os.path.exists(local_path):
-            print("Ошибка: локальный файл не найден: {}".format(local_path))
-            return False
-        
-        print("Использование PySpark для загрузки данных в HDFS...")
-        
-        # Создаем временную Spark сессию для загрузки
-        spark = SparkSession.builder \
-            .appName("UploadToHDFS") \
-            .master("local[1]") \
-            .config("spark.hadoop.fs.defaultFS", "hdfs://namenode:9000") \
-            .getOrCreate()
-        
-        # Создаем директорию в HDFS через Spark
-        hdfs_dir = os.path.dirname(hdfs_path)
-        sc = spark.sparkContext
-        hadoop_conf = sc._jsc.hadoopConfiguration()
-        hadoop_conf.set("fs.defaultFS", "hdfs://namenode:9000")
-        
-        uri = sc._jvm.java.net.URI("hdfs://namenode:9000")
-        fs = sc._jvm.org.apache.hadoop.fs.FileSystem.get(uri, hadoop_conf)
-        dir_path = sc._jvm.org.apache.hadoop.fs.Path(hdfs_dir)
-        
-        if not fs.exists(dir_path):
-            fs.mkdirs(dir_path)
-            print("Директория {} создана в HDFS".format(hdfs_dir))
-        
-        # Читаем локальный файл
-        print("Чтение локального файла: {}".format(local_path))
-        df = spark.read.option("header", "true").csv("file://{}".format(local_path))
-        
-        # Записываем в HDFS как один файл (coalesce(1) объединяет все партиции)
-        print("Запись в HDFS: {}".format(hdfs_path))
-        df.coalesce(1).write.mode("overwrite").option("header", "true").csv(hdfs_path.replace('.csv', '_temp'))
-        
-        # Переименовываем файл part-00000 в нужное имя через Hadoop API
-        temp_dir = hdfs_path.replace('.csv', '_temp')
-        temp_path = sc._jvm.org.apache.hadoop.fs.Path(temp_dir)
-        
-        # Находим файл part-00000
-        file_statuses = fs.listStatus(temp_path)
-        part_file = None
-        for status in file_statuses:
-            file_name = status.getPath().getName()
-            if file_name.startswith('part-') and not file_name.endswith('.crc'):
-                part_file = status.getPath()
-                break
-        
-        if part_file:
-            # Создаем путь для финального файла
-            final_path = sc._jvm.org.apache.hadoop.fs.Path(hdfs_path)
-            
-            # Перемещаем файл
-            if fs.exists(final_path):
-                fs.delete(final_path, False)
-            fs.rename(part_file, final_path)
-            
-            # Удаляем временную директорию
-            fs.delete(temp_path, True)
-            
-            print("✓ Данные успешно загружены в HDFS: {}".format(hdfs_path))
-            spark.stop()
-            return True
-        else:
-            print("Предупреждение: не найден файл part- в {}".format(temp_dir))
-            print("Данные загружены в директорию: {}".format(temp_dir))
-            spark.stop()
-            return True
-        
-    except Exception as e:
-        print("Ошибка при загрузке через Spark: {}".format(e))
-        import traceback
-        traceback.print_exc()
-        try:
-            spark.stop()
-        except:
-            pass
+    if not os.path.exists(local_path):
+        print("Локальный файл не найден: {}".format(local_path))
         return False
 
-def ensure_data_in_hdfs(local_path, hdfs_path):
-    """Проверка и загрузка данных в HDFS, если их там нет"""
-    print("Проверка наличия данных в HDFS...")
-    
-    # Небольшая задержка для инициализации HDFS
-    time.sleep(2)
-    
-    # Проверяем существование файла в HDFS
-    file_exists = check_hdfs_file_exists(hdfs_path)
-    
-    if file_exists:
-        print("✓ Данные уже находятся в HDFS: {}".format(hdfs_path))
+    loader = create_spark_session(app_name="UploadCarsToHDFS", master="local[1]")
+    try:
+        sc = loader.sparkContext
+        conf = sc._jsc.hadoopConfiguration()
+        conf.set("fs.defaultFS", "hdfs://namenode:9000")
+        uri = sc._jvm.java.net.URI("hdfs://namenode:9000")
+        fs = sc._jvm.org.apache.hadoop.fs.FileSystem.get(uri, conf)
+
+        hdfs_dir = os.path.dirname(hdfs_path)
+        dir_path = sc._jvm.org.apache.hadoop.fs.Path(hdfs_dir)
+        if not fs.exists(dir_path):
+            fs.mkdirs(dir_path)
+
+        df = loader.read.option("header", "true").csv("file://{}".format(local_path))
+        temp_dir = hdfs_path.replace(".csv", "_temp")
+        df.coalesce(1).write.mode("overwrite").option("header", "true").csv(temp_dir)
+
+        temp_path = sc._jvm.org.apache.hadoop.fs.Path(temp_dir)
+        final_path = sc._jvm.org.apache.hadoop.fs.Path(hdfs_path)
+        part_file = None
+        for status in fs.listStatus(temp_path):
+            name = status.getPath().getName()
+            if name.startswith("part-") and not name.endswith(".crc"):
+                part_file = status.getPath()
+                break
+
+        if not part_file:
+            print("Не найден part-файл в {}".format(temp_dir))
+            return False
+
+        if fs.exists(final_path):
+            fs.delete(final_path, False)
+        fs.rename(part_file, final_path)
+        fs.delete(temp_path, True)
+        print("Данные загружены в HDFS: {}".format(hdfs_path))
         return True
-    
-    # Если файла нет, загружаем его
-    print("✗ Данные не найдены в HDFS, начинаю загрузку...")
-    
-    # Проверяем наличие локального файла
-    possible_paths = [
+    finally:
+        loader.stop()
+
+
+def ensure_data_in_hdfs(local_path, hdfs_path):
+    print("Проверка наличия данных в HDFS...")
+    time.sleep(2)
+
+    if check_hdfs_file_exists(hdfs_path):
+        print("Данные уже есть в HDFS: {}".format(hdfs_path))
+        return True
+
+    for candidate in [
         local_path,
         "/data/{}".format(os.path.basename(local_path)),
         "/opt/spark/work-dir/{}".format(os.path.basename(local_path)),
         os.path.basename(local_path),
-        "./{}".format(os.path.basename(local_path))
-    ]
-    
-    local_file = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            local_file = path
-            print("✓ Найден локальный файл: {}".format(path))
-            break
-    
-    if local_file:
-        success = upload_to_hdfs(local_file, hdfs_path)
-        if success:
-            # Проверяем еще раз после загрузки
-            time.sleep(1)
-            if check_hdfs_file_exists(hdfs_path):
-                print("✓ Подтверждено: данные успешно загружены в HDFS")
-                return True
-        return success
-    else:
-        print("✗ Ошибка: локальный файл не найден.")
-        print("Проверенные пути: {}".format(possible_paths))
-        print("Текущая директория: {}".format(os.getcwd()))
-        return False
+    ]:
+        if os.path.exists(candidate):
+            print("Найден локальный файл: {}".format(candidate))
+            return upload_to_hdfs(candidate, hdfs_path)
 
-def load_data(spark, hdfs_path):
-    """Загрузка данных из HDFS"""
-    schema = StructType([
-        StructField("Component_Type", StringType(), True),
-        StructField("Manufacturer", StringType(), True),
-        StructField("Model", StringType(), True),
-        StructField("Spec_1", StringType(), True),
-        StructField("Spec_2", StringType(), True),
-        StructField("Spec_3", StringType(), True),
-        StructField("Year", IntegerType(), True),
-        StructField("Month", IntegerType(), True),
-        StructField("Day", IntegerType(), True),
-        StructField("Week", IntegerType(), True),
-        StructField("Merchant", StringType(), True),
-        StructField("Region_Code", StringType(), True),
-        StructField("Currency", StringType(), True),
-        StructField("Price_USD", DoubleType(), True),
-        StructField("Price_Original", DoubleType(), True)
-    ])
-    
-    df = spark.read \
-        .option("header", "true") \
-        .schema(schema) \
-        .csv(hdfs_path)
-    
-    return df
+    print("Локальный CSV не найден, загрузка в HDFS пропущена.")
+    return False
+
+
+def load_data(spark, path):
+    return spark.read.option("header", "true").schema(get_schema()).csv(path)
+
+
+def print_section_title(title, index=None):
+    prefix = "{}. ".format(index) if index is not None else ""
+    print("\n{}{}".format(prefix, title))
+    print("-" * 80)
+
 
 def print_metrics(df):
-    """Вывод ключевых метрик из датасета"""
-    
     print("=" * 80)
-    print("КЛЮЧЕВЫЕ МЕТРИКИ ДАТАСЕТА КОМПОНЕНТОВ")
+    print("АНАЛИЗ ТЕСТОВОГО ДАТАСЕТА АВТОМОБИЛЕЙ")
     print("=" * 80)
-    
-    # Общая статистика
-    print("\n1. ОБЩАЯ СТАТИСТИКА:")
-    print("-" * 80)
+
+    print_section_title("Общая статистика", 1)
     total_records = df.count()
-    print("Общее количество записей: {:,}".format(total_records))
-    
-    # Статистика по ценам
-    print("\n2. СТАТИСТИКА ПО ЦЕНАМ (USD):")
-    print("-" * 80)
-    price_stats = df.agg(
-        spark_round(avg("Price_USD"), 2).alias("Средняя цена"),
-        spark_round(spark_min("Price_USD"), 2).alias("Минимальная цена"),
-        spark_round(spark_max("Price_USD"), 2).alias("Максимальная цена"),
-        spark_round(stddev("Price_USD"), 2).alias("Стандартное отклонение")
+    stats = df.agg(
+        spark_round(avg("Price_USD"), 2).alias("avg_price"),
+        spark_round(spark_min("Price_USD"), 2).alias("min_price"),
+        spark_round(spark_max("Price_USD"), 2).alias("max_price"),
+        spark_round(stddev("Price_USD"), 2).alias("std_price"),
+        spark_round(avg("Mileage_KM"), 0).alias("avg_mileage"),
     ).collect()[0]
-    
-    print("Средняя цена: ${}".format(price_stats['Средняя цена']))
-    print("Минимальная цена: ${}".format(price_stats['Минимальная цена']))
-    print("Максимальная цена: ${}".format(price_stats['Максимальная цена']))
-    print("Стандартное отклонение: ${}".format(price_stats['Стандартное отклонение']))
-    
-    # Статистика по типам компонентов
-    print("\n3. СТАТИСТИКА ПО ТИПАМ КОМПОНЕНТОВ:")
+    print("Всего записей: {}".format(total_records))
+    print("Средняя цена: ${}".format(stats["avg_price"]))
+    print("Минимальная цена: ${}".format(stats["min_price"]))
+    print("Максимальная цена: ${}".format(stats["max_price"]))
+    print("Стандартное отклонение: ${}".format(stats["std_price"]))
+    print("Средний пробег: {:,} км".format(int(stats["avg_mileage"] or 0)))
+
+    print_section_title("Статистика по типам автомобилей", 2)
+    vehicle_stats = (
+        df.groupBy("Vehicle_Type")
+        .agg(
+            count("*").alias("records"),
+            spark_round(avg("Price_USD"), 2).alias("avg_price"),
+            spark_round(spark_min("Price_USD"), 2).alias("min_price"),
+            spark_round(spark_max("Price_USD"), 2).alias("max_price"),
+        )
+        .orderBy("Vehicle_Type")
+    )
+    print("Vehicle_Type | Records | Avg Price | Min Price | Max Price")
     print("-" * 80)
-    component_stats = df.groupBy("Component_Type").agg(
-        count("*").alias("Количество"),
-        spark_round(avg("Price_USD"), 2).alias("Средняя цена"),
-        spark_round(spark_min("Price_USD"), 2).alias("Мин. цена"),
-        spark_round(spark_max("Price_USD"), 2).alias("Макс. цена")
-    ).orderBy("Component_Type")
-    
-    # Выводим данные построчно для избежания проблем с кодировкой
-    rows = component_stats.collect()
-    print("Component_Type | Количество | Средняя цена | Мин. цена | Макс. цена")
+    for row in vehicle_stats.collect():
+        print(
+            "{} | {} | ${} | ${} | ${}".format(
+                row["Vehicle_Type"],
+                row["records"],
+                row["avg_price"],
+                row["min_price"],
+                row["max_price"],
+            )
+        )
+
+    print_section_title("Топ-10 брендов", 3)
+    brand_stats = (
+        df.groupBy("Brand")
+        .agg(
+            count("*").alias("records"),
+            spark_round(avg("Price_USD"), 2).alias("avg_price"),
+        )
+        .orderBy(col("records").desc(), col("avg_price").desc())
+    )
+    print("Brand | Records | Avg Price")
     print("-" * 80)
-    for row in rows:
-        print("{} | {} | ${} | ${} | ${}".format(
-            row['Component_Type'],
-            row['Количество'],
-            row['Средняя цена'],
-            row['Мин. цена'],
-            row['Макс. цена']
-        ))
-    
-    # Статистика по производителям
-    print("\n4. ТОП-10 ПРОИЗВОДИТЕЛЕЙ ПО КОЛИЧЕСТВУ ЗАПИСЕЙ:")
+    for row in brand_stats.limit(10).collect():
+        print("{} | {} | ${}".format(row["Brand"], row["records"], row["avg_price"]))
+
+    print_section_title("Статистика по годам", 4)
+    year_stats = (
+        df.groupBy("Year")
+        .agg(
+            count("*").alias("records"),
+            spark_round(avg("Price_USD"), 2).alias("avg_price"),
+        )
+        .orderBy("Year")
+    )
+    print("Year | Records | Avg Price")
     print("-" * 80)
-    manufacturer_stats = df.groupBy("Manufacturer").agg(
-        count("*").alias("Количество записей"),
-        spark_round(avg("Price_USD"), 2).alias("Средняя цена")
-    ).orderBy(col("Количество записей").desc())
-    
-    # Выводим данные построчно
-    rows = manufacturer_stats.limit(10).collect()
-    print("Manufacturer | Количество записей | Средняя цена")
+    for row in year_stats.collect():
+        print("{} | {} | ${}".format(row["Year"], row["records"], row["avg_price"]))
+
+    print_section_title("Топ-10 дилеров", 5)
+    dealer_stats = (
+        df.groupBy("Dealer")
+        .agg(
+            count("*").alias("records"),
+            spark_round(avg("Price_USD"), 2).alias("avg_price"),
+        )
+        .orderBy(col("records").desc(), col("avg_price").desc())
+    )
+    print("Dealer | Records | Avg Price")
     print("-" * 80)
-    for row in rows:
-        print("{} | {} | ${}".format(
-            row['Manufacturer'],
-            row['Количество записей'],
-            row['Средняя цена']
-        ))
-    
-    # Статистика по годам
-    print("\n5. СТАТИСТИКА ПО ГОДАМ:")
+    for row in dealer_stats.limit(10).collect():
+        print("{} | {} | ${}".format(row["Dealer"], row["records"], row["avg_price"]))
+
+    print_section_title("Топ-10 моделей", 6)
+    model_stats = (
+        df.groupBy("Model")
+        .agg(
+            count("*").alias("records"),
+            spark_round(avg("Price_USD"), 2).alias("avg_price"),
+        )
+        .orderBy(col("records").desc(), col("avg_price").desc())
+    )
+    print("Model | Records | Avg Price")
     print("-" * 80)
-    year_stats = df.groupBy("Year").agg(
-        count("*").alias("Количество записей"),
-        spark_round(avg("Price_USD"), 2).alias("Средняя цена"),
-        spark_round(spark_min("Price_USD"), 2).alias("Мин. цена"),
-        spark_round(spark_max("Price_USD"), 2).alias("Макс. цена")
-    ).orderBy("Year")
-    
-    # Выводим данные построчно
-    rows = year_stats.collect()
-    print("Year | Количество записей | Средняя цена | Мин. цена | Макс. цена")
+    for row in model_stats.limit(10).collect():
+        print("{} | {} | ${}".format(row["Model"], row["records"], row["avg_price"]))
+
+    print_section_title("Статистика по регионам", 7)
+    region_stats = (
+        df.groupBy("Region_Code")
+        .agg(
+            count("*").alias("records"),
+            spark_round(avg("Price_USD"), 2).alias("avg_price"),
+        )
+        .orderBy(col("records").desc(), col("avg_price").desc())
+    )
+    print("Region | Records | Avg Price")
     print("-" * 80)
-    for row in rows:
-        print("{} | {} | ${} | ${} | ${}".format(
-            row['Year'],
-            row['Количество записей'],
-            row['Средняя цена'],
-            row['Мин. цена'],
-            row['Макс. цена']
-        ))
-    
-    # Статистика по мерчантам
-    print("\n6. ТОП-10 МЕРЧАНТОВ ПО КОЛИЧЕСТВУ ЗАПИСЕЙ:")
+    for row in region_stats.collect():
+        print("{} | {} | ${}".format(row["Region_Code"], row["records"], row["avg_price"]))
+
+    print_section_title("Динамика цен по месяцам за 2024 год", 8)
+    monthly_stats = (
+        df.filter(col("Year") == 2024)
+        .groupBy("Month")
+        .agg(
+            count("*").alias("records"),
+            spark_round(avg("Price_USD"), 2).alias("avg_price"),
+        )
+        .orderBy("Month")
+    )
+    print("Month | Records | Avg Price")
     print("-" * 80)
-    merchant_stats = df.groupBy("Merchant").agg(
-        count("*").alias("Количество записей"),
-        spark_round(avg("Price_USD"), 2).alias("Средняя цена")
-    ).orderBy(col("Количество записей").desc())
-    
-    # Выводим данные построчно
-    rows = merchant_stats.limit(10).collect()
-    print("Merchant | Количество записей | Средняя цена")
-    print("-" * 80)
-    for row in rows:
-        print("{} | {} | ${}".format(
-            row['Merchant'],
-            row['Количество записей'],
-            row['Средняя цена']
-        ))
-    
-    # Статистика по моделям (топ-10)
-    print("\n7. ТОП-10 МОДЕЛЕЙ ПО КОЛИЧЕСТВУ ЗАПИСЕЙ:")
-    print("-" * 80)
-    model_stats = df.groupBy("Model").agg(
-        count("*").alias("Количество записей"),
-        spark_round(avg("Price_USD"), 2).alias("Средняя цена")
-    ).orderBy(col("Количество записей").desc())
-    
-    # Выводим данные построчно
-    rows = model_stats.limit(10).collect()
-    print("Model | Количество записей | Средняя цена")
-    print("-" * 80)
-    for row in rows:
-        print("{} | {} | ${}".format(
-            row['Model'],
-            row['Количество записей'],
-            row['Средняя цена']
-        ))
-    
-    # Статистика по регионам
-    print("\n8. СТАТИСТИКА ПО РЕГИОНАМ:")
-    print("-" * 80)
-    region_stats = df.groupBy("Region_Code").agg(
-        count("*").alias("Количество записей"),
-        spark_round(avg("Price_USD"), 2).alias("Средняя цена")
-    ).orderBy(col("Количество записей").desc())
-    
-    # Выводим данные построчно
-    rows = region_stats.collect()
-    print("Region_Code | Количество записей | Средняя цена")
-    print("-" * 80)
-    for row in rows:
-        print("{} | {} | ${}".format(
-            row['Region_Code'],
-            row['Количество записей'],
-            row['Средняя цена']
-        ))
-    
-    # Динамика цен по месяцам (для последнего года)
-    print("\n9. ДИНАМИКА ЦЕН ПО МЕСЯЦАМ (2018 год):")
-    print("-" * 80)
-    monthly_stats = df.filter(col("Year") == 2018).groupBy("Month").agg(
-        count("*").alias("Количество записей"),
-        spark_round(avg("Price_USD"), 2).alias("Средняя цена")
-    ).orderBy("Month")
-    
-    # Выводим данные построчно
-    rows = monthly_stats.collect()
-    print("Month | Количество записей | Средняя цена")
-    print("-" * 80)
-    for row in rows:
-        print("{} | {} | ${}".format(
-            row['Month'],
-            row['Количество записей'],
-            row['Средняя цена']
-        ))
-    
-    # Корреляция между полями
-    print("\n10. КОРРЕЛЯЦИЯ МЕЖДУ ГОДОМ И ЦЕНОЙ:")
-    print("-" * 80)
+    for row in monthly_stats.collect():
+        print("{} | {} | ${}".format(row["Month"], row["records"], row["avg_price"]))
+
+    print_section_title("Корреляция между годом и ценой", 9)
     correlation = df.stat.corr("Year", "Price_USD")
-    print("Корреляция между годом и ценой: {:.4f}".format(correlation))
-    
+    print("Корреляция Year-Price_USD: {:.4f}".format(correlation))
+
     print("\n" + "=" * 80)
     print("АНАЛИЗ ЗАВЕРШЕН")
     print("=" * 80)
 
+
 def main():
-    """Главная функция"""
-    # Пути к данным
-    hdfs_path = "hdfs://namenode:9000/data/all_components_prices.csv"
-    local_file = "all_components_prices.csv"
-    
-    # Сначала убеждаемся, что данные в HDFS
     print("=" * 80)
     print("ПОДГОТОВКА ДАННЫХ")
     print("=" * 80)
-    
-    if not ensure_data_in_hdfs(local_file, hdfs_path):
-        print("Предупреждение: не удалось загрузить данные в HDFS автоматически")
-        print("Попытка продолжить с существующими данными в HDFS...")
-        time.sleep(2)
-    
-    # Создание Spark сессии
+
+    if not ensure_data_in_hdfs(LOCAL_FILE, HDFS_PATH):
+        print("Продолжаю с попыткой чтения данных напрямую из локального файла.")
+
     print("\n" + "=" * 80)
     print("СОЗДАНИЕ SPARK СЕССИИ")
     print("=" * 80)
+
     spark = create_spark_session()
-    
+    spark.sparkContext.setLogLevel("ERROR")
+
     try:
-        # Загрузка данных из HDFS
-        print("\nЗагрузка данных из HDFS...")
-        df = load_data(spark, hdfs_path)
-        
-        # Кэширование данных для оптимизации
-        df.cache()
-        
-        # Вывод метрик
-        print_metrics(df)
-        
-    except Exception as e:
-        print("\nОшибка при выполнении анализа: {}".format(str(e)))
-        print("\nПопытка загрузить данные из локального файла...")
         try:
-            # Пробуем загрузить из локального файла как fallback
-            local_paths = [
-                local_file,
-                "/data/{}".format(local_file),
-                "/opt/spark/work-dir/{}".format(local_file)
+            print("\nЗагрузка данных из HDFS...")
+            df = load_data(spark, HDFS_PATH)
+        except Exception:
+            local_candidates = [
+                LOCAL_FILE,
+                f"/data/{LOCAL_FILE}",
+                f"/opt/spark/work-dir/{LOCAL_FILE}",
             ]
-            for path in local_paths:
+            for path in local_candidates:
                 if os.path.exists(path):
-                    print("Загрузка из локального файла: {}".format(path))
+                    print("\nЗагрузка данных из локального файла: {}".format(path))
                     df = load_data(spark, "file://{}".format(path))
-                    df.cache()
-                    print_metrics(df)
                     break
             else:
-                raise Exception("Локальный файл не найден")
-        except Exception as e2:
-            print("Ошибка при загрузке из локального файла: {}".format(str(e2)))
-            import traceback
-            traceback.print_exc()
-    
+                raise FileNotFoundError("Локальный файл {} не найден".format(LOCAL_FILE))
+
+        df.cache()
+        print_metrics(df)
     finally:
-        # Закрытие Spark сессии
         spark.stop()
+
 
 if __name__ == "__main__":
     main()
-

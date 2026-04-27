@@ -1,0 +1,99 @@
+Vehicle_Type,Brand,Model,Fuel_Type,Transmission,Drive_Type,Year,Month,Day,Week,Dealer,Region_Code,Currency,Price_USD,Mileage_KM
+Sedan,Toyota,Camry,Gasoline,Automatic,FWD,2018,1,12,2,AutoHub Moscow,RU-MOW,USD,21900,112000
+Sedan,Toyota,Camry,Gasoline,Automatic,FWD,2019,2,15,7,AutoHub Moscow,RU-MOW,USD,23800,94000
+Sedan,Toyota,Camry,Gasoline,Automatic,FWD,2020,3,18,11,AutoHub Moscow,RU-MOW,USD,25700,76000
+Sedan,Toyota,Camry,Gasoline,Automatic,FWD,2021,4,22,16,AutoHub Moscow,RU-MOW,USD,27900,52000
+Sedan,Toyota,Corolla,Gasoline,CVT,FWD,2019,5,14,20,Neva Cars,RU-SPE,USD,17600,87000
+Sedan,Toyota,Corolla,Gasoline,CVT,FWD,2021,6,9,24,Neva Cars,RU-SPE,USD,20900,43000
+Sedan,Hyundai,Elantra,Gasoline,Automatic,FWD,2020,7,11,28,Neva Cars,RU-SPE,USD,18900,69000
+Sedan,Hyundai,Elantra,Gasoline,Automatic,FWD,2022,8,19,33,Neva Cars,RU-SPE,USD,24400,24000
+Sedan,Hyundai,Sonata,Gasoline,Automatic,FWD,2021,9,10,37,Volga Motors,RU-NIZ,USD,26700,47000
+Sedan,Hyundai,Sonata,Hybrid,Automatic,FWD,2023,10,6,40,Volga Motors,RU-NIZ,USD,31800,12000
+Sedan,Kia,K5,Gasoline,Automatic,FWD,2021,11,17,46,Volga Motors,RU-NIZ,USD,25200,51000
+Sedan,Kia,K5,Gasoline,Automatic,FWD,2022,12,21,51,Volga Motors,RU-NIZ,USD,27600,26000
+Sedan,Kia,Cerato,Gasoline,Automatic,FWD,2020,1,16,3,Auto Plaza South,RU-KDA,USD,18200,72000
+Sedan,Kia,Cerato,Gasoline,Automatic,FWD,2021,2,18,8,Auto Plaza South,RU-KDA,USD,20100,49000
+Sedan,Volkswagen,Passat,Gasoline,Automatic,FWD,2019,3,20,12,Auto Plaza South,RU-KDA,USD,22800,83000
+Sedan,Volkswagen,Passat,Gasoline,Automatic,FWD,2021,4,12,15,Auto Plaza South,RU-KDA,USD,28400,41000
+Sedan,BMW,320i,Gasoline,Automatic,RWD,2020,5,13,19,Premium Drive,RU-MOW,USD,33600,61000
+Sedan,BMW,320i,Gasoline,Automatic,RWD,2022,6,24,25,Premium Drive,RU-MOW,USD,40100,22000
+Sedan,Mercedes,C200,Gasoline,Automatic,RWD,2021,7,7,27,Premium Drive,RU-MOW,USD,38900,38000
+Sedan,Mercedes,C200,Gasoline,Automatic,RWD,2023,8,28,35,Premium Drive,RU-MOW,USD,47200,11000
+Sedan,Audi,A4,Gasoline,Automatic,AWD,2020,9,14,38,Premium Drive,RU-MOW,USD,34800,58000
+Sedan,Audi,A4,Gasoline,Automatic,AWD,2022,10,11,41,Premium Drive,RU-MOW,USD,41800,19000
+Sedan,Skoda,Octavia,Gasoline,Automatic,FWD,2019,11,9,45,Central Auto,RU-EKB,USD,17900,92000
+Sedan,Skoda,Octavia,Gasoline,Automatic,FWD,2021,12,15,50,Central Auto,RU-EKB,USD,22600,48000
+SUV,Toyota,RAV4,Gasoline,Automatic,AWD,2019,1,17,3,AutoHub Moscow,RU-MOW,USD,25900,98000
+SUV,Toyota,RAV4,Hybrid,Automatic,AWD,2021,2,26,8,AutoHub Moscow,RU-MOW,USD,33800,42000
+SUV,Toyota,RAV4,Hybrid,Automatic,AWD,2023,3,21,12,AutoHub Moscow,RU-MOW,USD,38900,14000
+SUV,Hyundai,Tucson,Gasoline,Automatic,AWD,2020,4,11,15,Neva Cars,RU-SPE,USD,24800,73000
+SUV,Hyundai,Tucson,Gasoline,Automatic,AWD,2022,5,18,20,Neva Cars,RU-SPE,USD,30900,26000
+SUV,Hyundai,Santa Fe,Diesel,Automatic,AWD,2021,6,22,25,Neva Cars,RU-SPE,USD,35200,39000
+SUV,Kia,Sportage,Gasoline,Automatic,AWD,2019,7,9,28,Volga Motors,RU-NIZ,USD,22900,101000
+SUV,Kia,Sportage,Gasoline,Automatic,AWD,2021,8,16,33,Volga Motors,RU-NIZ,USD,28100,49000
+SUV,Kia,Sorento,Diesel,Automatic,AWD,2022,9,27,39,Volga Motors,RU-NIZ,USD,39600,24000
+SUV,Volkswagen,Tiguan,Gasoline,Automatic,AWD,2020,10,8,41,Central Auto,RU-EKB,USD,27100,67000
+SUV,Volkswagen,Tiguan,Gasoline,Automatic,AWD,2022,11,19,47,Central Auto,RU-EKB,USD,33200,21000
+SUV,Skoda,Kodiaq,Gasoline,Automatic,AWD,2021,12,13,50,Central Auto,RU-EKB,USD,31800,43000
+SUV,BMW,X3,Diesel,Automatic,AWD,2021,1,20,4,Premium Drive,RU-MOW,USD,49800,37000
+SUV,BMW,X3,Diesel,Automatic,AWD,2023,2,25,8,Premium Drive,RU-MOW,USD,58400,9000
+SUV,Mercedes,GLC,Gasoline,Automatic,AWD,2022,3,29,13,Premium Drive,RU-MOW,USD,61200,15000
+SUV,Mercedes,GLC,Diesel,Automatic,AWD,2021,4,15,16,Premium Drive,RU-MOW,USD,56300,31000
+SUV,Audi,Q5,Gasoline,Automatic,AWD,2020,5,28,22,Premium Drive,RU-MOW,USD,47200,52000
+SUV,Audi,Q5,Gasoline,Automatic,AWD,2023,6,17,24,Premium Drive,RU-MOW,USD,60100,8000
+SUV,Ford,Explorer,Gasoline,Automatic,AWD,2021,7,6,27,Auto Plaza South,RU-KDA,USD,45500,29000
+SUV,Nissan,X-Trail,Gasoline,CVT,AWD,2020,8,12,33,Siberia Auto,RU-NVS,USD,24100,68000
+SUV,Nissan,X-Trail,Gasoline,CVT,AWD,2022,9,23,38,Siberia Auto,RU-NVS,USD,29900,25000
+SUV,Mazda,CX-5,Gasoline,Automatic,AWD,2021,10,14,41,Auto Plaza South,RU-KDA,USD,31200,36000
+Pickup,Toyota,Hilux,Diesel,Automatic,4WD,2019,1,19,3,Siberia Auto,RU-NVS,USD,31800,108000
+Pickup,Toyota,Hilux,Diesel,Automatic,4WD,2021,2,21,8,Siberia Auto,RU-NVS,USD,43800,39000
+Pickup,Toyota,Hilux,Diesel,Automatic,4WD,2023,3,24,12,Siberia Auto,RU-NVS,USD,49700,12000
+Pickup,Ford,Ranger,Diesel,Automatic,4WD,2020,4,18,16,Auto Plaza South,RU-KDA,USD,33600,79000
+Pickup,Ford,Ranger,Diesel,Automatic,4WD,2022,5,26,21,Auto Plaza South,RU-KDA,USD,45800,25000
+Pickup,Ford,F-150,Gasoline,Automatic,4WD,2022,6,11,24,Auto Plaza South,RU-KDA,USD,51900,21000
+Pickup,Ford,F-150,Gasoline,Automatic,4WD,2024,7,5,27,Auto Plaza South,RU-KDA,USD,64800,4000
+Pickup,Isuzu,D-Max,Diesel,Automatic,4WD,2020,8,16,33,Siberia Auto,RU-NVS,USD,36500,56000
+Pickup,Isuzu,D-Max,Diesel,Automatic,4WD,2022,9,18,37,Siberia Auto,RU-NVS,USD,42100,23000
+Pickup,Mitsubishi,L200,Diesel,Automatic,4WD,2019,10,22,43,Volga Motors,RU-NIZ,USD,31200,74000
+Pickup,Mitsubishi,L200,Diesel,Automatic,4WD,2021,11,17,46,Volga Motors,RU-NIZ,USD,38900,36000
+Pickup,Nissan,Navara,Diesel,Automatic,4WD,2021,12,9,49,Siberia Auto,RU-NVS,USD,40100,34000
+Pickup,Great Wall,Poer,Diesel,Automatic,4WD,2023,1,13,2,Central Auto,RU-EKB,USD,43200,11000
+EV,Tesla,Model 3,Electric,Automatic,RWD,2021,2,14,6,Electro Mall,RU-MOW,USD,41800,29000
+EV,Tesla,Model 3,Electric,Automatic,RWD,2023,3,20,12,Electro Mall,RU-MOW,USD,46300,8000
+EV,Tesla,Model Y,Electric,Automatic,AWD,2022,4,11,15,Electro Mall,RU-MOW,USD,52100,17000
+EV,Tesla,Model Y,Electric,Automatic,AWD,2024,5,23,21,Electro Mall,RU-MOW,USD,57900,3000
+EV,Nissan,Leaf,Electric,Automatic,FWD,2019,6,19,25,Green Wheels,RU-SPE,USD,16400,97000
+EV,Nissan,Leaf,Electric,Automatic,FWD,2020,7,8,28,Green Wheels,RU-SPE,USD,19800,64000
+EV,Volkswagen,ID.4,Electric,Automatic,AWD,2022,8,15,33,Electro Mall,RU-MOW,USD,38900,19000
+EV,BYD,Han,Electric,Automatic,FWD,2023,9,7,36,Green Wheels,RU-SPE,USD,41800,7000
+EV,Zeekr,001,Electric,Automatic,AWD,2024,10,16,42,Green Wheels,RU-SPE,USD,62600,2000
+EV,Xpeng,G9,Electric,Automatic,AWD,2024,11,22,47,Green Wheels,RU-SPE,USD,60800,3500
+EV,Avatr,11,Electric,Automatic,AWD,2024,12,5,49,Electro Mall,RU-MOW,USD,67100,1800
+EV,Hyundai,Ioniq 5,Electric,Automatic,AWD,2023,1,27,4,Neva Cars,RU-SPE,USD,47200,9000
+Sedan,Toyota,Camry,Hybrid,Automatic,FWD,2023,2,10,6,AutoHub Moscow,RU-MOW,USD,33600,9000
+Sedan,Hyundai,Elantra,Gasoline,Automatic,FWD,2023,3,18,11,Neva Cars,RU-SPE,USD,25900,15000
+Sedan,Kia,K5,Gasoline,Automatic,FWD,2023,4,14,15,Volga Motors,RU-NIZ,USD,29300,11000
+Sedan,Volkswagen,Passat,Gasoline,Automatic,FWD,2022,5,21,20,Central Auto,RU-EKB,USD,30200,26000
+Sedan,Skoda,Octavia,Gasoline,Automatic,FWD,2023,6,12,24,Central Auto,RU-EKB,USD,24800,17000
+Sedan,Audi,A6,Gasoline,Automatic,AWD,2021,7,19,29,Premium Drive,RU-MOW,USD,48600,42000
+SUV,Toyota,Highlander,Gasoline,Automatic,AWD,2021,8,24,34,AutoHub Moscow,RU-MOW,USD,44100,35000
+SUV,Kia,Seltos,Gasoline,Automatic,AWD,2022,9,13,37,Volga Motors,RU-NIZ,USD,25800,22000
+SUV,Chery,Tiggo 8 Pro,Gasoline,Automatic,FWD,2023,10,5,40,Central Auto,RU-EKB,USD,28900,10000
+SUV,Haval,F7,Gasoline,Automatic,AWD,2022,11,11,45,Central Auto,RU-EKB,USD,27100,24000
+SUV,Geely,Monjaro,Gasoline,Automatic,AWD,2024,12,19,51,Central Auto,RU-EKB,USD,37700,2500
+Pickup,Toyota,Tundra,Gasoline,Automatic,4WD,2024,1,15,3,AutoHub Moscow,RU-MOW,USD,64100,5000
+Pickup,JAC,T9,Diesel,Automatic,4WD,2024,2,20,8,Central Auto,RU-EKB,USD,38400,4000
+Pickup,UAZ,Pickup,Gasoline,Manual,4WD,2021,3,9,10,Volga Motors,RU-NIZ,USD,21400,48000
+Pickup,UAZ,Pickup,Gasoline,Manual,4WD,2023,4,17,16,Volga Motors,RU-NIZ,USD,23900,15000
+EV,Volkswagen,ID.6,Electric,Automatic,AWD,2024,5,28,22,Electro Mall,RU-MOW,USD,54800,2800
+EV,BYD,Song Plus EV,Electric,Automatic,FWD,2024,6,14,24,Green Wheels,RU-SPE,USD,35600,3200
+Sedan,Lada,Vesta,Gasoline,Manual,FWD,2021,7,16,28,Regional Cars,RU-ROS,USD,12300,58000
+Sedan,Lada,Vesta,Gasoline,Manual,FWD,2023,8,25,34,Regional Cars,RU-ROS,USD,14900,18000
+Sedan,Lada,Granta,Gasoline,Manual,FWD,2020,9,7,36,Regional Cars,RU-ROS,USD,9800,76000
+SUV,Lada,Niva Travel,Gasoline,Manual,4WD,2022,10,18,42,Regional Cars,RU-ROS,USD,16800,21000
+SUV,Renault,Duster,Gasoline,Automatic,AWD,2021,11,12,45,Regional Cars,RU-ROS,USD,19700,46000
+SUV,Renault,Arkana,Gasoline,CVT,AWD,2021,12,20,51,Regional Cars,RU-ROS,USD,22100,39000
+Pickup,Great Wall,Wingle 7,Diesel,Manual,4WD,2021,1,11,2,Central Auto,RU-EKB,USD,26400,41000
+EV,Ora,Good Cat,Electric,Automatic,FWD,2023,2,18,7,Green Wheels,RU-SPE,USD,28900,6000
+Sedan,Genesis,G70,Gasoline,Automatic,AWD,2022,3,23,12,Premium Drive,RU-MOW,USD,43200,21000
+SUV,Genesis,GV70,Gasoline,Automatic,AWD,2023,4,8,14,Premium Drive,RU-MOW,USD,55800,9000
